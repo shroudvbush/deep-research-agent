@@ -10,6 +10,26 @@ router = APIRouter()
 orchestrator = Orchestrator()
 
 
+def _row_to_dict(row: dict) -> dict:
+    """Map database column names to API field names."""
+    return {
+        "id": row.get("id"),
+        "created_at": row.get("created_at"),
+        "topic": row.get("topic"),
+        "constraints_": row.get("constraints_", ""),
+        "category": row.get("category", "research"),
+        "sources": json.loads(row.get("sources", "[]")),
+        "tasks": json.loads(row.get("tasks_json", "[]")),
+        "report": json.loads(row.get("report_json", "{}")),
+        "status": row.get("status", "completed"),
+    }
+
+
+@router.get("/health")
+async def health():
+    return {"status": "ok", "pid": __import__("os").getpid()}
+
+
 @router.post("/research/stream")
 async def research_stream(
     topic: str = Body(...),
@@ -17,12 +37,13 @@ async def research_stream(
     max_tasks: int = Body(5),
     language: str = Body("zh-CN"),
     category: str = Body("research"),
+    initial_sources: list = Body([]),
 ):
     async def gen():
-        sources, tasks, report_data = [], [], {}
+        sources, tasks, report_data = list(initial_sources), [], {}
 
         try:
-            async for event in orchestrator.run_research(topic, constraints, max_tasks, language):
+            async for event in orchestrator.run_research(topic, constraints, max_tasks, language, initial_sources):
                 yield f"data: {json.dumps(event, ensure_ascii=False)}\n\n"
 
                 ev_data = event.get("payload") or {}
@@ -86,11 +107,7 @@ def save_history(body: HistorySavePayload):
 @router.get("/research/history")
 def list_history(category: Optional[str] = None, limit: int = 50):
     rows = db.get_all_history(category or "", limit)
-    for r in rows:
-        r["sources"] = json.loads(r.get("sources", "[]"))
-        r["tasks"] = json.loads(r.get("tasks", "[]"))
-        r["report"] = json.loads(r.get("report", "{}"))
-    return rows
+    return [_row_to_dict(r) for r in rows]
 
 
 @router.get("/research/history/{rid}")
@@ -98,10 +115,7 @@ def get_history(rid: int):
     row = db.get_record(rid)
     if not row:
         return {"error": "Not found"}
-    row["sources"] = json.loads(row.get("sources", "[]"))
-    row["tasks"] = json.loads(row.get("tasks", "[]"))
-    row["report"] = json.loads(row.get("report", "{}"))
-    return row
+    return _row_to_dict(row)
 
 
 @router.delete("/research/history/{rid}")

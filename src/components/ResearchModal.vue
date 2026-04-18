@@ -9,7 +9,7 @@
             <h2 class="modal-title">{{ displayTitle }}</h2>
             <p v-if="displayConstraints" class="modal-subtitle">{{ displayConstraints }}</p>
           </div>
-          <button class="close-btn" @click="close" title="Close (ESC)">
+          <button class="close-btn" @click="close" :title="t('modal.close') + ' (ESC)'">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <line x1="18" y1="6" x2="6" y2="18"></line>
               <line x1="6" y1="6" x2="18" y2="18"></line>
@@ -38,14 +38,14 @@
               :class="{ active: activeTab === 'research' }"
               @click="activeTab = 'research'"
             >
-              🔬 Research
+              🔬 {{ t('modal.research') }}
             </button>
             <button
               class="tab-btn"
               :class="{ active: activeTab === 'history' }"
               @click="switchToHistory"
             >
-              📚 History ({{ historyRecords.length }})
+              📚 {{ t('modal.history') }} ({{ historyRecords.length }})
             </button>
           </div>
 
@@ -55,52 +55,79 @@
             <!-- Input Form -->
             <div v-if="!state.running && !state.report" class="input-section">
               <div class="form-group">
-                <label>Research Topic</label>
+                <label>{{ t('modal.topic') }}</label>
                 <input
                   v-model="topic"
                   type="text"
-                  placeholder="e.g., Applications of AI in healthcare"
+                  :placeholder="t('modal.topicPlaceholder')"
                   @keyup.enter="handleStart"
                 />
               </div>
               <div class="form-group">
-                <label>Constraints (optional)</label>
+                <label>{{ t('modal.constraints') }}</label>
                 <textarea
                   v-model="constraints"
                   rows="3"
-                  placeholder="Add specific requirements, e.g., focus on 2024 developments"
+                  :placeholder="t('modal.constraintsPlaceholder')"
                 ></textarea>
               </div>
+
+              <!-- Pre-research Reference Input -->
+              <div class="ref-input-section">
+                <div class="ref-input-label">
+                  📚 {{ t('modal.refSectionTitle') }}
+                  <span class="ref-hint">{{ t('modal.refSectionHint') }}</span>
+                </div>
+                <div class="ref-input-row">
+                  <input
+                    v-model="refInputUrl"
+                    type="url"
+                    :placeholder="t('modal.refPlaceholder')"
+                    class="ref-input"
+                    @keyup.enter="addRef"
+                  />
+                  <button class="ref-add-btn" @click="addRef">
+                    {{ t('modal.addRef') }}
+                  </button>
+                </div>
+                <div v-if="extraRefs.length > 0" class="ref-tags">
+                  <span v-for="(ref, i) in extraRefs" :key="i" class="ref-tag">
+                    <a :href="ref" target="_blank" rel="noopener">{{ ref }}</a>
+                    <button class="ref-remove" @click="removeRef(i)">×</button>
+                  </span>
+                </div>
+              </div>
+
               <div class="form-row">
                 <div class="form-group half">
-                  <label>Number of Tasks</label>
+                  <label>{{ t('modal.taskCount') }}</label>
                   <select v-model="maxTasks">
-                    <option :value="3">3 tasks</option>
-                    <option :value="5">5 tasks</option>
-                    <option :value="7">7 tasks</option>
+                    <option :value="3">{{ t('modal.tasks3') }}</option>
+                    <option :value="5">{{ t('modal.tasks5') }}</option>
+                    <option :value="7">{{ t('modal.tasks7') }}</option>
                   </select>
                 </div>
                 <div class="form-group half">
-                  <label>Category</label>
+                  <label>{{ t('modal.category') }}</label>
                   <select v-model="activeCategory">
-                    <option value="research">General Research</option>
-                    <option value="planning">Task Planning</option>
-                    <option value="search">Multi-Source Search</option>
-                    <option value="summarize">Deep Summarization</option>
-                    <option value="report">Structured Reports</option>
+                    <option value="research">{{ t('modal.cat.research') }}</option>
+                    <option value="planning">{{ t('modal.cat.planning') }}</option>
+                    <option value="search">{{ t('modal.cat.search') }}</option>
+                    <option value="summarize">{{ t('modal.cat.summarize') }}</option>
+                    <option value="report">{{ t('modal.cat.report') }}</option>
                   </select>
                 </div>
               </div>
               <button class="start-btn" @click="handleStart" :disabled="!topic.trim()">
                 <span v-if="state.running" class="spinner"></span>
-                <span>{{ state.running ? 'Researching...' : 'Start Research' }}</span>
+                <span>{{ state.running ? t('modal.researching') : t('modal.start') }}</span>
               </button>
             </div>
 
             <!-- Loading State -->
             <div v-else-if="state.running && !state.report" class="loading-state">
               <div class="spinner-large"></div>
-              <p class="loading-text">Conducting deep research, please wait...</p>
+              <p class="loading-text">{{ t('modal.pleaseWait') }}</p>
               <div class="log-container">
                 <div v-for="(log, idx) in state.logs" :key="idx" class="log-item">
                   {{ log }}
@@ -112,13 +139,13 @@
             <div v-else-if="state.report" class="report-section">
               <div class="report-actions">
                 <button class="action-btn secondary" @click="reset">
-                  🔄 New Research
+                  🔄 {{ t('modal.newResearch') }}
                 </button>
-                <button v-if="viewingFromHistory" class="action-btn" @click="downloadReport">
-                  📥 Download Report
+                <button class="action-btn" @click="downloadReport">
+                  📥 {{ t('modal.download') }}
                 </button>
-                <button v-else class="action-btn" @click="saveToHistory">
-                  💾 Save to History
+                <button v-if="!viewingFromHistory" class="action-btn secondary" @click="saveToHistory">
+                  💾 {{ t('modal.save') }}
                 </button>
               </div>
               <div class="markdown-content" v-html="renderedReport"></div>
@@ -129,15 +156,15 @@
           <!-- History Tab -->
           <div v-show="activeTab === 'history'" class="tab-content">
             <div class="history-header">
-              <h3>📚 Research History</h3>
+              <h3>{{ t('modal.historyTitle') }}</h3>
               <button class="refresh-btn" @click="loadHistory(activeCategory)">
-                🔄 Refresh
+                🔄 {{ t('modal.refresh') }}
               </button>
             </div>
-            <div v-if="historyLoading" class="loading-msg">Loading...</div>
+            <div v-if="historyLoading" class="loading-msg">{{ t('modal.loading') }}</div>
             <div v-else-if="!historyRecords.length" class="empty-msg">
               <div class="empty-icon">📭</div>
-              <p>No history records yet</p>
+              <p>{{ t('modal.noHistory') }}</p>
             </div>
             <div v-else class="history-list">
               <div
@@ -155,7 +182,7 @@
                 <button
                   class="delete-btn"
                   @click.stop="deleteHistory(rec.id)"
-                  title="Delete"
+                  :title="t('modal.delete')"
                 >
                   🗑️
                 </button>
@@ -180,6 +207,7 @@ import { ref, computed, watch, onMounted } from 'vue'
 import { marked } from 'marked'
 import { useResearch } from '../composables/useResearch'
 import { fetchHistory, deleteHistoryItem, saveManualHistory } from '../api/research'
+import { useI18n } from '../i18n'
 import type { HistoryRecord, ResearchReport } from '../types/research'
 
 const props = defineProps<{
@@ -190,36 +218,37 @@ const props = defineProps<{
 const emit = defineEmits<{
   close: []
   'research-complete': []
-  'task-saved': []
 }>()
+
+const { t, locale } = useI18n()
 
 const isOpen = ref(true)
 const activeTab = ref(props.initialTab || 'research')
 const activeCategory = ref(props.initialFeature || 'research')
 
-// Research form
 const topic = ref('')
 const constraints = ref('')
 const maxTasks = ref(5)
 
-// History
 const historyRecords = ref<HistoryRecord[]>([])
 const historyLoading = ref(false)
 const selectedHistoryId = ref<number | null>(null)
 const viewingFromHistory = ref(false)
+const extraRefs = ref<string[]>([])
+const refInputUrl = ref('')
 
-// Research state
-const { state, start, reset: resetResearch, onResearchComplete, onTaskSaved } = useResearch()
+const { state, start, reset: resetResearch, onResearchComplete } = useResearch()
 
 function reset() {
   viewingFromHistory.value = false
+  extraRefs.value = []
+  refInputUrl.value = ''
   resetResearch()
 }
 
-// Display title: show fixed text while typing, real topic after research starts
 const displayTitle = computed(() => {
-  if (state.running || state.report) return topic.value || 'Deep Research'
-  return 'Deep Research'
+  if (state.running) return topic.value || t('modal.deepResearch')
+  return t('modal.deepResearch')
 })
 
 const displayConstraints = computed(() => {
@@ -227,7 +256,6 @@ const displayConstraints = computed(() => {
   return ''
 })
 
-// Progress
 const progressPercent = computed(() => {
   if (!state.running && state.report) return 100
   if (!state.running) return 0
@@ -237,43 +265,49 @@ const progressPercent = computed(() => {
 })
 
 const progressStage = computed(() => {
-  if (state.report) return 'Research Complete'
-  if (!state.running) return 'Ready'
-  if (state.tasks.length === 0) return 'Planning...'
+  if (state.report) return t('modal.researchComplete')
+  if (!state.running) return t('modal.ready')
+  if (state.tasks.length === 0) return t('modal.planning')
   const pending = state.tasks.filter(t => t.status === 'pending').length
   const running = state.tasks.filter(t => t.status === 'running').length
-  if (running > 0) return `Running: ${state.tasks.find(t => t.status === 'running')?.title}`
-  if (pending === 0) return 'Generating report...'
-  return `In Progress: ${state.tasks.length - pending}/${state.tasks.length}`
+  if (running > 0) {
+    const msg = t('modal.running')
+    const task = state.tasks.find(t => t.status === 'running')?.title
+    return `${msg}: ${task}`
+  }
+  if (pending === 0) return t('modal.generating')
+  const progress = t('modal.inProgress')
+  return `${progress}: ${state.tasks.length - pending}/${state.tasks.length}`
 })
 
 const statusText = computed(() => {
-  if (state.error) return `Error: ${state.error}`
-  if (state.report) return '✅ Research Complete'
-  if (state.running) return '🔍 Researching...'
-  return '⏸️ Ready'
+  if (state.error) return `${t('modal.error')}: ${state.error}`
+  if (state.report) return t('modal.statusComplete')
+  if (state.running) return t('modal.statusResearching')
+  return t('modal.statusReady')
 })
 
-// Report rendering — parse "Title||Content" sections
 const renderedReport = computed(() => {
   if (!state.report) return ''
   const report = state.report
 
   const sectionsMd = (report.sections || []).map(section => {
-    const sepIdx = section.indexOf('||')
+    if (!section) return ''
+    const sepIdx = String(section).indexOf('||')
     if (sepIdx === -1) return `## ${section}`
     const title = section.slice(0, sepIdx).trim()
     const content = section.slice(sepIdx + 2).trim()
     return `## ${title}\n\n${content}`
   }).join('\n\n')
 
-  const refsMd = (report.references || []).length > 0
-    ? `## References\n\n${report.references.map((r, i) => `${i + 1}. ${r}`).join('\n')}`
+  const allRefs = [...(report.references || []), ...extraRefs.value]
+  const refsMd = allRefs.length > 0
+    ? `## ${t('modal.references')}\n\n${allRefs.map((r, i) => `${i + 1}. ${r}`).join('\n')}`
     : ''
 
   const markdown = `# ${report.title}
 
-## Abstract
+## ${t('modal.abstract')}
 ${report.abstract || ''}
 
 ${sectionsMd}
@@ -283,11 +317,11 @@ ${refsMd}
   return marked(markdown)
 })
 
-// Methods
 async function handleStart() {
   if (!topic.value.trim() || state.running) return
   viewingFromHistory.value = false
-  await start(topic.value, constraints.value, maxTasks.value, activeCategory.value)
+  const refs = [...extraRefs.value]
+  await start(topic.value, constraints.value, maxTasks.value, activeCategory.value, refs)
 }
 
 function close() {
@@ -319,27 +353,47 @@ async function loadHistoryItem(rec: HistoryRecord) {
   selectedHistoryId.value = rec.id
   topic.value = rec.topic
   constraints.value = rec.constraints_ || ''
-  state.report = JSON.parse(JSON.stringify(rec.report || {}))
-  state.tasks = JSON.parse(JSON.stringify(rec.tasks || []))
+  state.report = rec.report
+  state.tasks = rec.tasks || []
+  extraRefs.value = []
+  refInputUrl.value = ''
   viewingFromHistory.value = true
   activeTab.value = 'research'
+}
+
+function addRef() {
+  const url = refInputUrl.value.trim()
+  if (!url) return
+  if (!extraRefs.value.includes(url)) {
+    extraRefs.value.push(url)
+  }
+  refInputUrl.value = ''
+}
+
+function removeRef(index: number) {
+  extraRefs.value.splice(index, 1)
 }
 
 function downloadReport() {
   const report = state.report
   if (!report) return
   const sectionsMd = (report.sections || []).map((s: string) => {
+    if (!s) return ''
     const i = s.indexOf('||')
     return i === -1 ? s : s.slice(0, i).trim() + '\n' + s.slice(i + 2).trim()
   }).join('\n\n')
+  const allRefs = [...(report.references || []), ...extraRefs.value]
+  const refsMd = allRefs.length
+    ? `## ${t('modal.references')}\n${allRefs.map((r: string, i: number) => `${i + 1}. ${r}`).join('\n')}`
+    : ''
   const content = `# ${report.title}
 
-## Abstract
+## ${t('modal.abstract')}
 ${report.abstract || ''}
 
 ${sectionsMd}
 
-${report.references?.length ? `## References\n${report.references.map((r: string, i: number) => `${i + 1}. ${r}`).join('\n')}` : ''}
+${refsMd}
 `
   const blob = new Blob([content], { type: 'text/markdown;charset=utf-8' })
   const url = URL.createObjectURL(blob)
@@ -351,7 +405,7 @@ ${report.references?.length ? `## References\n${report.references.map((r: string
 }
 
 async function deleteHistory(id: number) {
-  if (!confirm('Delete this record?')) return
+  if (!confirm(t('modal.deleteConfirm'))) return
   await deleteHistoryItem(id)
   await loadHistory(activeCategory.value)
 }
@@ -359,25 +413,25 @@ async function deleteHistory(id: number) {
 async function saveToHistory() {
   if (!state.report) return
   try {
+    const allSources = [...(state.report.references || []), ...extraRefs.value]
     await saveManualHistory(
       topic.value,
       constraints.value,
       activeCategory.value,
-      state.report.references || [],
+      allSources,
       state.tasks,
       state.report
     )
-    alert('Saved to history!')
+    alert(t('modal.saveSuccess'))
   } catch {
-    alert('Save failed')
+    alert(t('modal.saveFail'))
   }
 }
 
 function formatDate(dateStr: string) {
-  return new Date(dateStr).toLocaleString('en-US')
+  return new Date(dateStr).toLocaleString(locale.value === 'zh' ? 'zh-CN' : 'en-US')
 }
 
-// Lifecycle
 onMounted(() => {
   document.addEventListener('keydown', handleKeydown)
   if (props.initialTab === 'history') {
@@ -386,10 +440,6 @@ onMounted(() => {
   onResearchComplete(async () => {
     emit('research-complete')
     await loadHistory(activeCategory.value)
-  })
-  onTaskSaved(() => {
-    emit('task-saved')
-    loadHistory(activeCategory.value)
   })
 })
 
@@ -542,4 +592,16 @@ watch(isOpen, (open) => {
   .history-item { flex-direction: column; align-items: flex-start; gap: 8px; }
   .history-meta { width: 100%; justify-content: space-between; }
 }
+.ref-input-section { margin-bottom: 16px; padding: 12px; background: #f0f4ff; border-radius: 8px; border: 1px solid #dde; }
+.ref-input-row { display: flex; gap: 8px; }
+.ref-input { flex: 1; padding: 6px 10px; border: 1px solid #bbc; border-radius: 6px; font-size: 0.85rem; outline: none; }
+.ref-input:focus { border-color: #667eea; }
+.ref-add-btn { padding: 6px 14px; background: #667eea; color: #fff; border: none; border-radius: 6px; cursor: pointer; font-size: 0.85rem; white-space: nowrap; }
+.ref-add-btn:hover { background: #5a6fd6; }
+.ref-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.ref-tag { display: flex; align-items: center; gap: 4px; padding: 3px 8px; background: #eef2ff; border: 1px solid #cce; border-radius: 20px; font-size: 0.8rem; }
+.ref-tag a { color: #4f46e5; text-decoration: none; max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ref-tag a:hover { text-decoration: underline; }
+.ref-remove { background: none; border: none; color: #999; cursor: pointer; padding: 0 0 0 2px; font-size: 1rem; line-height: 1; }
+.ref-remove:hover { color: #e53; }
 </style>

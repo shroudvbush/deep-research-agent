@@ -1,16 +1,26 @@
 <template>
   <div class="app">
+    <!-- Language Switch -->
+    <div class="lang-switch">
+      <button
+        :class="{ active: locale === 'zh' }"
+        @click="setLocale('zh')"
+      >中文</button>
+      <button
+        :class="{ active: locale === 'en' }"
+        @click="setLocale('en')"
+      >EN</button>
+    </div>
+
     <div class="hero">
       <div class="hero-content">
         <h1 class="hero-title">
-          <span class="gradient-text">Deep Research Agent</span>
+          <span class="gradient-text">{{ t('app.title') }}</span>
         </h1>
-        <p class="hero-subtitle">
-          Enter a research topic — AI handles planning, search, summarization, and report generation automatically
-        </p>
+        <p class="hero-subtitle">{{ t('app.subtitle') }}</p>
         <button class="launch-btn" @click="openResearch()">
           <span class="btn-icon">🚀</span>
-          <span>Start Research</span>
+          <span>{{ t('app.start') }}</span>
         </button>
       </div>
     </div>
@@ -23,10 +33,10 @@
         @click="openResearch(card.key)"
       >
         <div class="card-icon">{{ card.icon }}</div>
-        <h3 class="card-title">{{ card.title }}</h3>
-        <p class="card-desc">{{ card.desc }}</p>
+        <h3 class="card-title">{{ t(card.titleKey) }}</h3>
+        <p class="card-desc">{{ t(card.descKey) }}</p>
         <div v-if="cardCounts[card.key] > 0" class="card-badge">
-          {{ cardCounts[card.key] }} records
+          {{ cardCounts[card.key] }} {{ t('app.records') }}
         </div>
       </div>
     </div>
@@ -37,7 +47,6 @@
       :initial-tab="activeTab"
       @close="showModal = false"
       @research-complete="refreshCounts"
-      @task-saved="onTaskSaved"
     />
   </div>
 </template>
@@ -45,6 +54,9 @@
 <script setup lang="ts">
 import { ref, onMounted, reactive } from 'vue'
 import ResearchModal from './components/ResearchModal.vue'
+import { useI18n } from './i18n'
+
+const { locale, setLocale, t } = useI18n()
 
 const showModal = ref(false)
 const activeCategory = ref('')
@@ -52,12 +64,12 @@ const activeTab = ref<'research' | 'history'>('research')
 const cardCounts = reactive<Record<string, number>>({})
 
 const featureCards = [
-  { key: 'research',  icon: '🔍', title: 'General Research',   desc: 'Deep research on any topic with structured report output' },
-  { key: 'planning',  icon: '📋', title: 'Task Planning',      desc: 'View intelligent task decomposition and planning history' },
-  { key: 'search',    icon: '🌐', title: 'Multi-Source Search', desc: 'Aggregated search results from multiple sources' },
-  { key: 'summarize', icon: '📝', title: 'Deep Summarization', desc: 'Content summarization and key findings extraction' },
-  { key: 'report',    icon: '📊', title: 'Structured Reports', desc: 'Complete research report generation history' },
-  { key: 'sse',       icon: '⚡', title: 'Real-Time Tracking', desc: 'SSE streaming and execution log history' },
+  { key: 'research',  icon: '🔍', titleKey: 'card.research.title',  descKey: 'card.research.desc' },
+  { key: 'planning',  icon: '📋', titleKey: 'card.planning.title',  descKey: 'card.planning.desc' },
+  { key: 'search',    icon: '🌐', titleKey: 'card.search.title',    descKey: 'card.search.desc' },
+  { key: 'summarize', icon: '📝', titleKey: 'card.summarize.title', descKey: 'card.summarize.desc' },
+  { key: 'report',    icon: '📊', titleKey: 'card.report.title',    descKey: 'card.report.desc' },
+  { key: 'sse',       icon: '⚡', titleKey: 'card.sse.title',       descKey: 'card.sse.desc' },
 ]
 
 async function openResearch(category = 'research') {
@@ -70,16 +82,12 @@ async function refreshCounts() {
   for (const card of featureCards) {
     try {
       const { fetchHistory } = await import('./api/research')
-      const list = await fetchHistory(card.key, 1)
+      const list = await fetchHistory(card.key, 999)
       cardCounts[card.key] = Array.isArray(list) ? list.length : 0
     } catch {
       cardCounts[card.key] = 0
     }
   }
-}
-
-async function onTaskSaved() {
-  cardCounts['research'] = (cardCounts['research'] || 0) + 1
 }
 
 onMounted(refreshCounts)
@@ -94,6 +102,24 @@ onMounted(refreshCounts)
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   color: #fff;
   padding: 0 20px 60px;
+  position: relative;
+}
+
+.lang-switch {
+  position: absolute; top: 20px; right: 24px;
+  display: flex; gap: 0; border-radius: 8px; overflow: hidden;
+  border: 1px solid rgba(255,255,255,0.3); z-index: 10;
+}
+.lang-switch button {
+  padding: 8px 16px; border: none; background: rgba(255,255,255,0.15);
+  color: rgba(255,255,255,0.7); font-size: 0.85rem; font-weight: 600;
+  cursor: pointer; transition: all 0.2s;
+}
+.lang-switch button.active {
+  background: rgba(255,255,255,0.3); color: #fff;
+}
+.lang-switch button:hover:not(.active) {
+  background: rgba(255,255,255,0.2);
 }
 
 .hero { text-align: center; padding: 100px 20px 80px; }
@@ -145,5 +171,7 @@ onMounted(refreshCounts)
   .launch-btn { padding: 16px 36px; font-size: 1rem; }
   .features { grid-template-columns: 1fr; gap: 16px; }
   .card { padding: 24px 20px; }
+  .lang-switch { top: 12px; right: 12px; }
+  .lang-switch button { padding: 6px 12px; font-size: 0.8rem; }
 }
 </style>

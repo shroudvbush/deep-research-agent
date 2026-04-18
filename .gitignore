@@ -1,0 +1,39 @@
+# Environment
+.env
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+
+# Database
+*.db
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Node
+node_modules/
+dist/
+package-lock.json
+
+# Logs
+*.log
+
+# Test / debug scripts
+test_*.py
+direct_test.py
+full_test.py
+isolate_test.py
+quick_test.py
+quick_llm_test.py
+sse_test.py
+db_clean.py
+db_status.py

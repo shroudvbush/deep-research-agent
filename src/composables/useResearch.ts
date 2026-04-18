@@ -29,6 +29,7 @@ export function useResearch() {
     constraints = '',
     maxTasks = 5,
     category = 'research',
+    initialSources: string[] = [],
   ) {
     if (state.running) return
     state.running = true
@@ -43,6 +44,7 @@ export function useResearch() {
       constraints,
       maxTasks,
       category,
+      initialSources,
       (ev: SSEEvent) => {
         addLog(`[${ev.event}] ${ev.message}`)
 
@@ -62,8 +64,8 @@ export function useResearch() {
           case 'task_failed':
             updateTaskStatus(ev.payload?.task_id, 'failed')
             break
-          case 'task_saved':
-            _onTaskSaved?.()
+          case 'history_saved':
+            _onComplete?.()
             break
           case 'report_completed':
             state.report = ev.payload?.report as ResearchReport

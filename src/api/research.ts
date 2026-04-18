@@ -7,6 +7,7 @@ export async function startResearchStream(
   constraints: string,
   maxTasks: number,
   category: string,
+  initialSources: string[] = [],
   onEvent: (event: SSEEvent) => void,
   onError: (err: Error) => void
 ): Promise<void> {
@@ -19,7 +20,8 @@ export async function startResearchStream(
       max_tasks: maxTasks,
       language: 'zh-CN',
       category,
-    } as ResearchRequest & { category: string }),
+      initial_sources: initialSources,
+    } as ResearchRequest & { category: string; initial_sources: string[] }),
   })
 
   if (!response.ok) {
@@ -57,8 +59,10 @@ export async function startResearchStream(
 }
 
 export async function fetchHistory(category?: string, limit = 20): Promise<HistoryRecord[]> {
-  const cat = category ? `?category=${encodeURIComponent(category)}` : ''
-  const res = await fetch(`${API_BASE}/api/research/history${cat}&limit=${limit}`)
+  const params = new URLSearchParams()
+  if (category) params.set('category', category)
+  params.set('limit', String(limit))
+  const res = await fetch(`${API_BASE}/api/research/history?${params}`)
   if (!res.ok) throw new Error(`HTTP ${res.status}`)
   return res.json()
 }

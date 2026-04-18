@@ -4,7 +4,6 @@ from app.services.planning_service import PlanningService
 from app.services.search_service import SearchService
 from app.services.summarization_service import SummarizationService
 from app.services.reporting_service import ReportingService
-from app import db
 
 
 class Orchestrator:
@@ -21,9 +20,14 @@ class Orchestrator:
         constraints: str = "",
         max_tasks: int = 5,
         language: str = "zh-CN",
+        initial_sources: list = None,
     ):
-        all_sources: list[str] = []
+        if initial_sources is None:
+            initial_sources = []
+        # 预置文献作为初始 sources
+        all_sources: list[str] = list(initial_sources)
         task_summaries: list = []
+        completed_task_ids: list[str] = []
 
         try:
             yield {"event": "research_started", "message": f"Research started: {topic}", "payload": {}}
@@ -48,41 +52,17 @@ class Orchestrator:
                     urls = [d.url for d in docs if d.url and d.source != "fallback"]
                     all_sources.extend(urls)
 
-                    try:
-                        task_report = {
-                            "title": f"Task: {task.title}",
-                            "abstract": task.goal,
-                            "sections": [f"Goal: {task.goal}"],
-                            "references": urls,
-                        }
-                        rid = db.save_record(
-                            topic=f"Task: {task.title}",
-                            constraints=f"Subtask of: {topic}",
-                            sources=urls,
-                            tasks=[t.model_dump() for t in tasks],
-                            report=task_report,
-                            category="research",
-                        )
-                        yield {
-                            "event": "task_saved",
-                            "message": f"Task saved: {task.title}",
-                            "payload": {"id": rid, "task_id": task.id, "category": "research"},
-                        }
-                    except Exception as se:
-                        print(f"[Orchestrator] save task record failed: {se}")
-
-                    if not urls:
-                        yield {
-                            "event": "task_completed",
-                            "message": f"Done: {task.title}",
-                            "payload": {"task_id": task.id, "sources": []},
-                        }
-                    else:
-                        yield {
-                            "event": "task_completed",
-                            "message": f"Done: {task.title} ({len(urls)} sources)",
-                            "payload": {"task_id": task.id, "sources": urls},
-                        }
+                    completed_task_ids.append(task.id)
+                    yield {
+                        "event": "task_completed",
+                        "message": f"Done: {task.title} ({len(urls)} sources)",
+                        "payload": {
+                            "task_id": task.id,
+                            "sources": urls,
+                            "completed_count": len(completed_task_ids),
+                            "total_count": len(tasks),
+                        },
+                    }
 
                     summary = await self.summarization.summarize(task, docs)
                     task_summaries.append(summary)
