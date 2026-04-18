@@ -29,72 +29,72 @@
 
 ​```mermaid
 graph TB
-    subgraph Frontend["前端层 (Vue3 + TypeScript)"]
-        UI["全屏模态对话框 UI"]
-        MD["Markdown 结果可视化"]
-    end
+ subgraph F["前端层 Vue3+TypeScript"]
+ F1["全屏模态对话框 UI"]
+ F2["Markdown 结果可视化"]
+ end
 
-    subgraph Backend["后端层 (FastAPI)"]
-        API["API 路由<br/>/research/stream"]
-    end
+ subgraph B["后端层 FastAPI"]
+ B1["API 路由 /research/stream"]
+ end
 
-    subgraph AgentLayer["智能体层 (HelloAgents)"]
-        Planner["TODO Planner<br/>研究规划 Agent"]
-        Summarizer["Task Summarizer<br/>任务总结 Agent"]
-        Reporter["Report Writer<br/>报告生成 Agent"]
-        SearchTool["SearchTool<br/>搜索工具"]
-        NoteTool["NoteTool<br/>笔记工具"]
-    end
+ subgraph A["智能体层"]
+ A1["Planner 规划Agent"]
+ A2["Summarizer 总结Agent"]
+ A3["Reporter 报告Agent"]
+ A4["SearchTool 搜索"]
+ A5["NoteTool 笔记"]
+ end
 
-    subgraph External["外部服务层"]
-        Search["搜索引擎<br/>(Tavily)"]
-        LLM["LLM 提供商<br/>(DeepSeek-V3)"]
-    end
+ subgraph E["外部服务层"]
+ E1["Tavily 搜索引擎"]
+ E2["DeepSeek-V3 LLM"]
+ end
 
-    Frontend -->|SSE| Backend
-    Backend -->|调度| AgentLayer
-    Planner -->|分解任务| SearchTool
-    Summarizer -->|总结内容| NoteTool
-    Reporter -->|生成报告| NoteTool
-    SearchTool -->|调用| Search
-    Planner -->|调用| LLM
-    Summarizer -->|调用| LLM
-    Reporter -->|调用| LLM
+ F -->|SSE| B
+ B -->|调度| A
+ A1 --> A4
+ A2 --> A5
+ A3 --> A5
+ A4 --> E1
+ A1 --> E2
+ A2 --> E2
+ A3 --> E2
+```
 
-​```
 
 ### 数据流转
 
 ​```mermaid
 sequenceDiagram
-    participant User as 用户
-    participant FE as 前端 (Vue3)
-    participant BE as 后端 (FastAPI)
-    participant Plan as 规划 Agent
-    participant Task as 执行循环
-    participant Report as 报告 Agent
+ actor User as 用户
+ participant FE as 前端 Vue3
+ participant BE as 后端 FastAPI
+ participant Plan as 规划Agent
+ participant Exec as 执行循环
+ participant Rpt as 报告Agent
 
-    User->>FE: 1. 输入研究主题
-    FE->>BE: 2. SSE 连接 /research/stream
-    BE->>BE: 3. 创建研究状态
-    BE->>Plan: 4. 调用规划 Agent
-    Plan-->>BE: 分解为 N 个子任务
+ User->>FE: 1.输入研究主题
+ FE->>BE: 2.SSE连接 /research/stream
+ BE->>BE: 3.创建研究状态
+ BE->>Plan: 4.调用规划Agent
+ Plan-->>BE: 分解为N个子任务
 
-    loop 5. 逐个执行子任务
-        BE->>Task: 使用 SearchTool 搜索
-        Task-->>BE: 搜索结果
-        BE->>Task: 调用总结 Agent
-        Task-->>BE: 任务总结
-        BE->>Task: 使用 NoteTool 记录
-        BE-->>FE: SSE 推送进度
-    end
+ loop 5.逐个执行子任务
+ BE->>Exec: SearchTool搜索
+ Exec-->>BE: 搜索结果
+ BE->>Exec: 总结Agent总结
+ Exec-->>BE: 任务总结
+ BE->>Exec: NoteTool记录
+ BE-->>FE: SSE推送进度
+ end
 
-    BE->>Report: 6. 调用报告生成 Agent
-    Report-->>BE: 完整研究报告
-    BE-->>FE: 7. SSE 推送报告
-    FE->>User: 8. 实时展示结果
+ BE->>Rpt: 6.调用报告Agent
+ Rpt-->>BE: 完整研究报告
+ BE-->>FE: 7.SSE推送报告
+ FE->>User: 8.实时展示结果
+```
 
-​```
 
 
 ## 快速开始
