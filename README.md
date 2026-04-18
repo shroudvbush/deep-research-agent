@@ -129,4 +129,6 @@ deep-research-agent/
 
 ## 开源许可
 
+MIT License
+ 
 
