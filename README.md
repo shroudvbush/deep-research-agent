@@ -27,73 +27,12 @@
 
 ### 技术架构
 
-​```mermaid
-graph TB
- subgraph F["前端层 Vue3+TypeScript"]
- F1["全屏模态对话框 UI"]
- F2["Markdown 结果可视化"]
- end
-
- subgraph B["后端层 FastAPI"]
- B1["API 路由 /research/stream"]
- end
-
- subgraph A["智能体层"]
- A1["Planner 规划Agent"]
- A2["Summarizer 总结Agent"]
- A3["Reporter 报告Agent"]
- A4["SearchTool 搜索"]
- A5["NoteTool 笔记"]
- end
-
- subgraph E["外部服务层"]
- E1["Tavily 搜索引擎"]
- E2["DeepSeek-V3 LLM"]
- end
-
- F -->|SSE| B
- B -->|调度| A
- A1 --> A4
- A2 --> A5
- A3 --> A5
- A4 --> E1
- A1 --> E2
- A2 --> E2
- A3 --> E2
-```
-
+![技术架构](architecture.png)
 
 ### 数据流转
 
-​```mermaid
-sequenceDiagram
- actor User as 用户
- participant FE as 前端 Vue3
- participant BE as 后端 FastAPI
- participant Plan as 规划Agent
- participant Exec as 执行循环
- participant Rpt as 报告Agent
+![数据流转](dataflow.png)
 
- User->>FE: 1.输入研究主题
- FE->>BE: 2.SSE连接 /research/stream
- BE->>BE: 3.创建研究状态
- BE->>Plan: 4.调用规划Agent
- Plan-->>BE: 分解为N个子任务
-
- loop 5.逐个执行子任务
- BE->>Exec: SearchTool搜索
- Exec-->>BE: 搜索结果
- BE->>Exec: 总结Agent总结
- Exec-->>BE: 任务总结
- BE->>Exec: NoteTool记录
- BE-->>FE: SSE推送进度
- end
-
- BE->>Rpt: 6.调用报告Agent
- Rpt-->>BE: 完整研究报告
- BE-->>FE: 7.SSE推送报告
- FE->>User: 8.实时展示结果
-```
 
 
 
