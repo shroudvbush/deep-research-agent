@@ -123,6 +123,10 @@ deep-research-agent/
 **Q: 研究过程中报错？**
 > 检查 `.env` 中的 API Key 是否正确，网络是否正常（部分搜索需要访问外网）。
 
+## 致谢
+
+本项目灵感来源于 [Datawhale《从零开始构建智能体》](https://github.com/datawhalechina/hello-agents) 教程项目，感谢 Datawhale 社区提供的优秀学习资源。
+
 ## 开源许可
 
-MIT
+
