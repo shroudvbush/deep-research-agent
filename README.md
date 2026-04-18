@@ -25,11 +25,77 @@
 
 ## 项目架构
 
-```
-orchestrator.py ──► PlanningService ──► [Task 1] ──► SearchService ──► SummarizationService
-                                   └─► [Task 2] ──► SearchService ──► SummarizationService
-                                   └─► [Task N] ──► ... ──► ReportingService ──► Report
-```
+### 技术架构
+
+​```mermaid
+graph TB
+    subgraph Frontend["前端层 (Vue3 + TypeScript)"]
+        UI["全屏模态对话框 UI"]
+        MD["Markdown 结果可视化"]
+    end
+
+    subgraph Backend["后端层 (FastAPI)"]
+        API["API 路由<br/>/research/stream"]
+    end
+
+    subgraph AgentLayer["智能体层 (HelloAgents)"]
+        Planner["TODO Planner<br/>研究规划 Agent"]
+        Summarizer["Task Summarizer<br/>任务总结 Agent"]
+        Reporter["Report Writer<br/>报告生成 Agent"]
+        SearchTool["SearchTool<br/>搜索工具"]
+        NoteTool["NoteTool<br/>笔记工具"]
+    end
+
+    subgraph External["外部服务层"]
+        Search["搜索引擎<br/>(Tavily)"]
+        LLM["LLM 提供商<br/>(DeepSeek-V3)"]
+    end
+
+    Frontend -->|SSE| Backend
+    Backend -->|调度| AgentLayer
+    Planner -->|分解任务| SearchTool
+    Summarizer -->|总结内容| NoteTool
+    Reporter -->|生成报告| NoteTool
+    SearchTool -->|调用| Search
+    Planner -->|调用| LLM
+    Summarizer -->|调用| LLM
+    Reporter -->|调用| LLM
+
+​```
+
+### 数据流转
+
+​```mermaid
+sequenceDiagram
+    participant User as 用户
+    participant FE as 前端 (Vue3)
+    participant BE as 后端 (FastAPI)
+    participant Plan as 规划 Agent
+    participant Task as 执行循环
+    participant Report as 报告 Agent
+
+    User->>FE: 1. 输入研究主题
+    FE->>BE: 2. SSE 连接 /research/stream
+    BE->>BE: 3. 创建研究状态
+    BE->>Plan: 4. 调用规划 Agent
+    Plan-->>BE: 分解为 N 个子任务
+
+    loop 5. 逐个执行子任务
+        BE->>Task: 使用 SearchTool 搜索
+        Task-->>BE: 搜索结果
+        BE->>Task: 调用总结 Agent
+        Task-->>BE: 任务总结
+        BE->>Task: 使用 NoteTool 记录
+        BE-->>FE: SSE 推送进度
+    end
+
+    BE->>Report: 6. 调用报告生成 Agent
+    Report-->>BE: 完整研究报告
+    BE-->>FE: 7. SSE 推送报告
+    FE->>User: 8. 实时展示结果
+
+​```
+
 
 ## 快速开始
 
