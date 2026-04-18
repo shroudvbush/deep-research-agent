@@ -52,8 +52,8 @@ orchestrator.py ──► PlanningService ──► [Task 1] ──► SearchSer
 2. 填入你的 LLM API Key：
 
 ```env
-LLM_API_KEY=your_api_key_here
-LLM_BASE_URL=https://api.siliconflow.cn/v1
+LLM_API_KEY=your_api_key_here（这里填写的是你自己的api密钥）
+LLM_BASE_URL=https://api.siliconflow.cn/v1（由于演示用的是硅基流动里的deepseek模型，所以填写的是硅基流动的url，可按需更改）
 LLM_MODEL=deepseek-ai/DeepSeek-V3-241206
 SEARCH_PROVIDER=deepseek
 ```
